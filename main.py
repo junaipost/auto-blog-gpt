@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from blog_bot_friendly import run_auto_blog
+from blog_bot_friendly_v2 import run_auto_blog
 
 app = FastAPI()
 
