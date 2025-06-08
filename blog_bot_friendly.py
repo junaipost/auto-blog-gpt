@@ -8,41 +8,21 @@ NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ Step 1: 네이버 검색어 트렌드 키워드 가져오기
+# ✅ 최신 openai API 클라이언트 사용
+client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+# ✅ Step 1: 트렌드 키워드 가져오기 (모의)
 def get_trending_keywords():
-    url = "https://openapi.naver.com/v1/datalab/search"
-    headers = {
-        "X-Naver-Client-Id": NAVER_CLIENT_ID,
-        "X-Naver-Client-Secret": NAVER_CLIENT_SECRET,
-        "Content-Type": "application/json"
-    }
-    body = {
-        "startDate": datetime.now().strftime("%Y-%m-%d"),
-        "endDate": datetime.now().strftime("%Y-%m-%d"),
-        "timeUnit": "date",
-        "keywordGroups": [
-            {"groupName": "트렌드", "keywords": ["요즘", "인기", "핫이슈"]}
-        ],
-        "device": "pc",
-        "ages": ["20", "30"],
-        "gender": ""
-    }
-    try:
-        res = requests.post(url, headers=headers, json=body)
-        data = res.json()
-        return ["오늘의 인기 키워드", "트렌디한 이야기"]
-    except:
-        return ["요즘 핫한 이슈"]
+    return ["오늘의 인기 키워드", "트렌디한 이야기"]
 
 # ✅ Step 2: GPT로 친근한 말투 블로그 글 생성
 def generate_blog_content(keyword):
-    openai.api_key = OPENAI_API_KEY
     prompt = (
         f"'{keyword}'라는 주제로 부드럽고 친근한 말투로 블로그 스타일의 글을 써줘. "
         "‘~했어요’, ‘~하답니다’, ‘~해볼까요?’ 같은 말투로, "
         "서론-본론-결론 구성, 500자 정도 분량으로."
     )
-    response = openai.ChatCompletion.create(
+    response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{ "role": "user", "content": prompt }],
         temperature=0.8
@@ -51,19 +31,19 @@ def generate_blog_content(keyword):
 
 # ✅ Step 3: DALL·E 이미지 생성 및 저장
 def generate_image(prompt, filename="image.png"):
-    openai.api_key = OPENAI_API_KEY
-    response = openai.Image.create(
+    response = client.images.generate(
+        model="dall-e-3",
         prompt=prompt,
         n=1,
-        size="512x512"
+        size="1024x1024"
     )
-    image_url = response["data"][0]["url"]
+    image_url = response.data[0].url
     img_data = requests.get(image_url).content
     with open(filename, "wb") as f:
         f.write(img_data)
     return filename
 
-# ✅ Step 4: 이미지 업로드
+# ✅ Step 4: 네이버 이미지 업로드
 def upload_image_to_naver(image_path):
     with open("token_store.json", "r", encoding="utf-8") as f:
         token_data = json.load(f)
