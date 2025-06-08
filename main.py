@@ -16,7 +16,7 @@ def read_root():
     return {"message": "Hello, this is your auto blog bot!"}
 
 @app.get("/callback")
-def callback(request: Request):
+async def callback(request: Request):
     code = request.query_params.get("code")
     state = request.query_params.get("state")
 
