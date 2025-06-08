@@ -8,14 +8,14 @@ NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID")
 NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# ✅ 최신 openai API 클라이언트 사용
+# ✅ 최신 openai API 클라이언트 초기화
 client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-# ✅ Step 1: 트렌드 키워드 가져오기 (모의)
+# ✅ Step 1: 트렌드 키워드 모의 수집
 def get_trending_keywords():
     return ["오늘의 인기 키워드", "트렌디한 이야기"]
 
-# ✅ Step 2: GPT로 친근한 말투 블로그 글 생성
+# ✅ Step 2: GPT로 부드러운 말투 글 생성
 def generate_blog_content(keyword):
     prompt = (
         f"'{keyword}'라는 주제로 부드럽고 친근한 말투로 블로그 스타일의 글을 써줘. "
@@ -29,7 +29,7 @@ def generate_blog_content(keyword):
     )
     return response.choices[0].message.content
 
-# ✅ Step 3: DALL·E 이미지 생성 및 저장
+# ✅ Step 3: 이미지 생성 및 저장
 def generate_image(prompt, filename="image.png"):
     response = client.images.generate(
         model="dall-e-3",
@@ -43,7 +43,7 @@ def generate_image(prompt, filename="image.png"):
         f.write(img_data)
     return filename
 
-# ✅ Step 4: 네이버 이미지 업로드
+# ✅ Step 4: 네이버 블로그에 이미지 업로드
 def upload_image_to_naver(image_path):
     with open("token_store.json", "r", encoding="utf-8") as f:
         token_data = json.load(f)
@@ -58,26 +58,29 @@ def upload_image_to_naver(image_path):
     res = requests.post("https://openapi.naver.com/blog/uploadImage.json", headers=headers, files=files)
     return res.json().get("result", {}).get("url")
 
-# ✅ Step 5: 포스트 업로드
+# ✅ Step 5: 포스트 등록 (Content-Type 지정 + data로 전송)
 def post_to_blog(title, content, image_url=None):
     with open("token_store.json", "r", encoding="utf-8") as f:
         token_data = json.load(f)
     access_token = token_data.get("access_token")
 
     headers = {
-        "Authorization": f"Bearer {access_token}"
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/x-www-form-urlencoded"
     }
+
     if image_url:
         content += f"<br><br><img src='{image_url}' />"
 
-    params = {
+    data = {
         "title": title,
         "contents": content
     }
-    res = requests.post("https://openapi.naver.com/blog/writePost.json", headers=headers, params=params)
+
+    res = requests.post("https://openapi.naver.com/blog/writePost.json", headers=headers, data=data)
     return res.status_code, res.text
 
-# ✅ 전체 실행 함수
+# ✅ 전체 자동화 실행
 def run_auto_blog():
     keywords = get_trending_keywords()
     keyword = keywords[0]
